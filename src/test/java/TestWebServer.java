@@ -1,2 +1,5 @@
-package PACKAGE_NAME;public class TestWebServer {
+public class TestWebServer {
+    void func() {
+        System.out.println("succeed");
+    }
 }
