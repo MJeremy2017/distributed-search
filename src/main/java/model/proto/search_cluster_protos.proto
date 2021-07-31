@@ -3,7 +3,7 @@ syntax = "proto2";
 package distributed.search;  // package in the protocol buffer namespace
 
 option java_outer_classname = "SearchModel";
-option java_package = "model.proto.test";
+option java_package = "model.proto";
 
 message Request {
   required string search_query = 1;
