@@ -1,19 +1,23 @@
 import management.ElectionCallback;
 import management.ServiceRegistry;
+import networking.WebClient;
 import networking.WebServer;
 import org.apache.zookeeper.KeeperException;
+import search.SearchCoordinator;
 import search.SearchWorker;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 
 public class ElectionAction implements ElectionCallback {
-    private ServiceRegistry serviceRegistry;
+    private ServiceRegistry workerServiceRegistry;
+    private ServiceRegistry coordinatorServiceRegistry;
     private WebServer webServer = null;
     private final int port;
 
-    public ElectionAction(ServiceRegistry serviceRegistry, int port) {
-        this.serviceRegistry = serviceRegistry;
+    public ElectionAction(ServiceRegistry workerServiceRegistry, ServiceRegistry coordinatorServiceRegistry, int port) {
+        this.workerServiceRegistry = workerServiceRegistry;
+        this.coordinatorServiceRegistry = coordinatorServiceRegistry;
         this.port = port;
     }
 
@@ -32,7 +36,7 @@ public class ElectionAction implements ElectionCallback {
                     port,
                     worker.getTaskEndpoint());
             // register worker to cluster
-            serviceRegistry.registerToCluster(serverAddress);
+            workerServiceRegistry.registerToCluster(serverAddress);
         } catch (InterruptedException | KeeperException | UnknownHostException e) {
             e.printStackTrace();
         }
@@ -41,9 +45,25 @@ public class ElectionAction implements ElectionCallback {
     @Override
     public void onLeader() {
         try {
-            serviceRegistry.unregisterFromCluster();
-            serviceRegistry.updateAddresses();
-        } catch (InterruptedException | KeeperException e) {
+            workerServiceRegistry.unregisterFromCluster();
+            workerServiceRegistry.updateAddresses();
+            // start leader server
+            if (webServer != null) {
+                webServer.stop();
+            }
+            WebClient client = new WebClient();
+            SearchCoordinator searchCoordinator = new SearchCoordinator(workerServiceRegistry, client);
+            webServer = new WebServer(searchCoordinator, port);
+            webServer.startServer();
+
+            // register to coordinator registry
+            String serverAddress = String.format("http://%s:%d%s",
+                    InetAddress.getLocalHost().getCanonicalHostName(),
+                    port,
+                    searchCoordinator.getTaskEndpoint());
+            coordinatorServiceRegistry.registerToCluster(serverAddress);
+
+        } catch (InterruptedException | KeeperException | UnknownHostException e) {
             e.printStackTrace();
         }
     }

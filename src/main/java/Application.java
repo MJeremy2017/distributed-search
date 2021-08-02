@@ -24,6 +24,7 @@ public class Application implements Watcher {
 
         ElectionAction electionAction = new ElectionAction(workerServiceRegistry, coordinatorServiceRegistry, port);
 
+        // the major starting point
         LeaderElection leaderElection = new LeaderElection(zooKeeper, electionAction);
         leaderElection.volunteerForLeader();
         leaderElection.electLeader();
