@@ -3,5 +3,5 @@
 ## Search Cluster Structure
 ![system](./images/distributed-search.png)
 
-## Zookeeper Structure
+## Zookeeper
 ![zookeeper](./images/zookeeper.png)
